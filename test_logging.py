@@ -7,9 +7,33 @@ import logging
 from pathlib import Path
 from datetime import datetime
 
-# Enhanced logging setup
+# Enhanced logging setup with colors
+class ColoredFormatter(logging.Formatter):
+    """Custom formatter to add colors to console output"""
+    
+    # ANSI color codes
+    COLORS = {
+        'DEBUG': '\033[36m',      # Cyan
+        'INFO': '\033[32m',       # Green
+        'WARNING': '\033[33m',    # Yellow
+        'ERROR': '\033[31m',      # Red
+        'CRITICAL': '\033[35m',   # Magenta
+        'RESET': '\033[0m'        # Reset color
+    }
+    
+    def format(self, record):
+        # Get the original formatted message
+        log_message = super().format(record)
+        
+        # Add color based on log level
+        color = self.COLORS.get(record.levelname, self.COLORS['RESET'])
+        reset = self.COLORS['RESET']
+        
+        # Return colored message
+        return f"{color}{log_message}{reset}"
+
 def setup_detailed_logging():
-    """Setup comprehensive logging with file and console output"""
+    """Setup comprehensive logging with file and colored console output"""
     # Create logs directory if it doesn't exist
     log_dir = Path("logs")
     log_dir.mkdir(exist_ok=True)
@@ -21,6 +45,9 @@ def setup_detailed_logging():
     simple_formatter = logging.Formatter(
         '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
     )
+    colored_formatter = ColoredFormatter(
+        '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
+    )
     
     # Setup logger
     logger = logging.getLogger(__name__)
@@ -29,7 +56,7 @@ def setup_detailed_logging():
     # Clear existing handlers
     logger.handlers.clear()
     
-    # File handler with detailed logging
+    # File handler with detailed logging (no colors for file)
     file_handler = logging.FileHandler(
         log_dir / f"test_logging_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
     )
@@ -37,10 +64,10 @@ def setup_detailed_logging():
     file_handler.setFormatter(detailed_formatter)
     logger.addHandler(file_handler)
     
-    # Console handler with simpler format
+    # Console handler with colored output
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
-    console_handler.setFormatter(simple_formatter)
+    console_handler.setFormatter(colored_formatter)
     logger.addHandler(console_handler)
     
     return logger
@@ -95,6 +122,20 @@ def test_function_with_error():
         log_function_exit("test_function_with_error", success=False, result_info=f"Failed as expected: {str(e)}")
         return False
 
+def test_all_log_levels():
+    """Test function to demonstrate all log levels and colors"""
+    log_function_entry("test_all_log_levels")
+    
+    logger.info("This is an INFO message - should appear in GREEN")
+    logger.warning("This is a WARNING message - should appear in YELLOW")
+    logger.error("This is an ERROR message - should appear in RED")
+    logger.critical("This is a CRITICAL message - should appear in MAGENTA")
+    
+    # Test debug level (usually won't show unless level is changed)
+    logger.debug("This is a DEBUG message - should appear in CYAN (if visible)")
+    
+    log_function_exit("test_all_log_levels", success=True, result_info="All log levels tested")
+
 def main():
     """Main test function"""
     log_function_entry("main")
@@ -109,6 +150,10 @@ def main():
         # Test function with error
         logger.info("Testing function with error handling...")
         success2 = test_function_with_error()
+        
+        # Test all log levels and colors
+        logger.info("Testing all log levels and colors...")
+        test_all_log_levels()
         
         logger.info("Logging test completed successfully!")
         log_function_exit("main", success=True, result_info="All logging tests passed")

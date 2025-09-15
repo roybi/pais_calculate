@@ -85,9 +85,33 @@ random.seed(42)
 if ML_AVAILABLE:
     tf.random.set_seed(42)
 
-# Enhanced logging setup
+# Enhanced logging setup with colors
+class ColoredFormatter(logging.Formatter):
+    """Custom formatter to add colors to console output"""
+    
+    # ANSI color codes
+    COLORS = {
+        'DEBUG': '\033[36m',      # Cyan
+        'INFO': '\033[32m',       # Green
+        'WARNING': '\033[33m',    # Yellow
+        'ERROR': '\033[31m',      # Red
+        'CRITICAL': '\033[35m',   # Magenta
+        'RESET': '\033[0m'        # Reset color
+    }
+    
+    def format(self, record):
+        # Get the original formatted message
+        log_message = super().format(record)
+        
+        # Add color based on log level
+        color = self.COLORS.get(record.levelname, self.COLORS['RESET'])
+        reset = self.COLORS['RESET']
+        
+        # Return colored message
+        return f"{color}{log_message}{reset}"
+
 def setup_detailed_logging():
-    """Setup comprehensive logging with file and console output"""
+    """Setup comprehensive logging with file and colored console output"""
     # Create logs directory if it doesn't exist
     log_dir = Path("logs")
     log_dir.mkdir(exist_ok=True)
@@ -99,6 +123,9 @@ def setup_detailed_logging():
     simple_formatter = logging.Formatter(
         '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
     )
+    colored_formatter = ColoredFormatter(
+        '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
+    )
     
     # Setup logger
     logger = logging.getLogger(__name__)
@@ -107,7 +134,7 @@ def setup_detailed_logging():
     # Clear existing handlers
     logger.handlers.clear()
     
-    # File handler with detailed logging
+    # File handler with detailed logging (no colors for file)
     file_handler = logging.FileHandler(
         log_dir / f"academic_pais_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
     )
@@ -115,10 +142,10 @@ def setup_detailed_logging():
     file_handler.setFormatter(detailed_formatter)
     logger.addHandler(file_handler)
     
-    # Console handler with simpler format
+    # Console handler with colored output
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
-    console_handler.setFormatter(simple_formatter)
+    console_handler.setFormatter(colored_formatter)
     logger.addHandler(console_handler)
     
     return logger

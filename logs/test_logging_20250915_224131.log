@@ -1,0 +1,27 @@
+2025-09-15 22:41:31,418 - __main__ - INFO - log_function_entry:81 - [ENTER] main()
+2025-09-15 22:41:31,418 - __main__ - INFO - main:144 - Starting logging functionality test
+2025-09-15 22:41:31,420 - __main__ - INFO - main:147 - Testing successful function execution...
+2025-09-15 22:41:31,420 - __main__ - INFO - log_function_entry:81 - [ENTER] test_function(param1=value1, param2=42)
+2025-09-15 22:41:31,420 - __main__ - INFO - test_function:97 - Performing some test operations...
+2025-09-15 22:41:31,420 - __main__ - INFO - test_function:101 - Processing step 1/3
+2025-09-15 22:41:31,420 - __main__ - INFO - test_function:101 - Processing step 2/3
+2025-09-15 22:41:31,420 - __main__ - INFO - test_function:101 - Processing step 3/3
+2025-09-15 22:41:31,420 - __main__ - INFO - log_function_exit:86 - [EXIT] test_function - SUCCESS All operations completed
+2025-09-15 22:41:31,422 - __main__ - INFO - main:151 - Testing function with error handling...
+2025-09-15 22:41:31,422 - __main__ - INFO - log_function_entry:81 - [ENTER] test_function_with_error()
+2025-09-15 22:41:31,422 - __main__ - INFO - test_function_with_error:117 - About to trigger an error...
+2025-09-15 22:41:31,422 - __main__ - ERROR - log_function_error:90 - [ERROR] test_function_with_error: This is a test error
+Traceback (most recent call last):
+  File "D:\_Dev\python\pais_results - Copy\test_logging.py", line 118, in test_function_with_error
+    raise ValueError("This is a test error")
+ValueError: This is a test error
+2025-09-15 22:41:31,426 - __main__ - INFO - log_function_exit:86 - [EXIT] test_function_with_error - FAILED Failed as expected: This is a test error
+2025-09-15 22:41:31,426 - __main__ - INFO - main:155 - Testing all log levels and colors...
+2025-09-15 22:41:31,426 - __main__ - INFO - log_function_entry:81 - [ENTER] test_all_log_levels()
+2025-09-15 22:41:31,426 - __main__ - INFO - test_all_log_levels:129 - This is an INFO message - should appear in GREEN
+2025-09-15 22:41:31,426 - __main__ - WARNING - test_all_log_levels:130 - This is a WARNING message - should appear in YELLOW
+2025-09-15 22:41:31,426 - __main__ - ERROR - test_all_log_levels:131 - This is an ERROR message - should appear in RED
+2025-09-15 22:41:31,426 - __main__ - CRITICAL - test_all_log_levels:132 - This is a CRITICAL message - should appear in MAGENTA
+2025-09-15 22:41:31,426 - __main__ - INFO - log_function_exit:86 - [EXIT] test_all_log_levels - SUCCESS All log levels tested
+2025-09-15 22:41:31,426 - __main__ - INFO - main:158 - Logging test completed successfully!
+2025-09-15 22:41:31,426 - __main__ - INFO - log_function_exit:86 - [EXIT] main - SUCCESS All logging tests passed
