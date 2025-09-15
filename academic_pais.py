@@ -63,7 +63,7 @@ try:
     ML_AVAILABLE = True
 except ImportError:
     ML_AVAILABLE = False
-    print("⚠️  Advanced ML libraries not available. Install: tensorflow>=2.8.0, scikit-learn>=1.0.0")
+    print("[WARNING]  Advanced ML libraries not available. Install: tensorflow>=2.8.0, scikit-learn>=1.0.0")
 
 # Advanced statistics
 try:
@@ -75,7 +75,7 @@ try:
     STATSMODELS_AVAILABLE = True
 except ImportError:
     STATSMODELS_AVAILABLE = False
-    print("⚠️  Statsmodels not available. Install: statsmodels>=0.13.0")
+    print("[WARNING]  Statsmodels not available. Install: statsmodels>=0.13.0")
 
 # Configuration
 warnings.filterwarnings('ignore')
@@ -338,7 +338,7 @@ class AcademicLotteryAnalyzer:
             cache_dir.mkdir(exist_ok=True)
             self.cache_dir = cache_dir
 
-            logger.info("🎓 Academic Lottery Analyzer initialized")
+            logger.info("[ACADEMIC] Academic Lottery Analyzer initialized")
             log_function_exit("__init__", success=True, result_info="Analyzer initialized successfully")
             
         except Exception as e:
@@ -351,7 +351,7 @@ class AcademicLotteryAnalyzer:
         log_function_entry("load_data_from_csv", csv_path=csv_path)
 
         try:
-            logger.info(f"📁 Loading lottery data from {csv_path}...")
+            logger.info(f"[FILE] Loading lottery data from {csv_path}...")
 
             # Try different encodings
             encodings = ['utf-8', 'utf-8-sig', 'latin1', 'cp1255']
@@ -360,41 +360,41 @@ class AcademicLotteryAnalyzer:
             for encoding in encodings:
                 try:
                     df = pd.read_csv(csv_path, encoding=encoding)
-                    logger.info(f"✅ File loaded successfully with {encoding} encoding")
+                    logger.info(f"[SUCCESS] File loaded successfully with {encoding} encoding")
                     break
                 except UnicodeDecodeError:
                     continue
 
             if df is None:
-                logger.error(f"❌ Failed to load file with any encoding")
+                logger.error(f"[FAILED] Failed to load file with any encoding")
                 return False
 
-            logger.info(f"📊 Raw data shape: {df.shape}")
-            logger.info(f"📋 Columns: {list(df.columns)}")
+            logger.info(f"[DATA] Raw data shape: {df.shape}")
+            logger.info(f"[INFO] Columns: {list(df.columns)}")
 
             # Validate required columns
             required_cols = ['draw_id', 'date', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6']
             missing_cols = [col for col in required_cols if col not in df.columns]
 
             if missing_cols:
-                logger.error(f"❌ Missing required columns: {missing_cols}")
+                logger.error(f"[FAILED] Missing required columns: {missing_cols}")
                 return False
 
             # Enhanced date parsing
-            logger.info("🔄 Processing dates with advanced parsing...")
+            logger.info("[PROCESS] Processing dates with advanced parsing...")
             df['date'] = df['date'].apply(self._parse_mixed_dates)
 
             # Remove invalid dates
             invalid_dates = df['date'].isna().sum()
             if invalid_dates > 0:
-                logger.warning(f"⚠️  Removing {invalid_dates} rows with invalid dates")
+                logger.warning(f"[WARNING]  Removing {invalid_dates} rows with invalid dates")
                 df = df.dropna(subset=['date'])
 
             # Data cleaning and validation
             df = self._advanced_data_cleaning(df, required_cols)
 
             # Convert to DrawData objects with enhanced analysis
-            logger.info("🔬 Converting to enhanced DrawData objects...")
+            logger.info("[ANALYSIS] Converting to enhanced DrawData objects...")
             for _, row in df.iterrows():
                 try:
                     numbers = [int(row[f'n{i}']) for i in range(1, 7)]
@@ -426,7 +426,7 @@ class AcademicLotteryAnalyzer:
                         draw.digit_sum = sum(sum(int(d) for d in str(n) if d.isdigit()) for n in numbers) if numbers else 0
                         draw.consecutive_count = self._count_consecutive(numbers) if numbers else 0
                     except Exception as e:
-                        logger.warning(f"⚠️  Error calculating stats for draw {draw.draw_id}: {e}")
+                        logger.warning(f"[WARNING]  Error calculating stats for draw {draw.draw_id}: {e}")
                         # Set default values
                         draw.sum_total = sum(numbers) if numbers else 0
                         draw.odd_count = 0
@@ -436,14 +436,14 @@ class AcademicLotteryAnalyzer:
                     self.draws.append(draw)
 
                 except Exception as e:
-                    logger.warning(f"⚠️  Error processing row {row.get('draw_id')}: {e}")
+                    logger.warning(f"[WARNING]  Error processing row {row.get('draw_id')}: {e}")
                     continue
 
             # Sort by date (newest first for time series analysis)
             self.draws.sort(key=lambda x: x.date, reverse=True)
 
-            logger.info(f"✅ Successfully loaded {len(self.draws)} valid draws")
-            logger.info(f"📅 Date range: {self.draws[-1].date.strftime('%d/%m/%Y')} - {self.draws[0].date.strftime('%d/%m/%Y')}")
+            logger.info(f"[SUCCESS] Successfully loaded {len(self.draws)} valid draws")
+            logger.info(f"[DATE] Date range: {self.draws[-1].date.strftime('%d/%m/%Y')} - {self.draws[0].date.strftime('%d/%m/%Y')}")
             logger.info(f"⏳ Time span: {(self.draws[0].date - self.draws[-1].date).days} days")
 
             success = len(self.draws) >= self.config["min_draws_for_analysis"]
@@ -453,7 +453,7 @@ class AcademicLotteryAnalyzer:
 
         except Exception as e:
             log_function_error("load_data_from_csv", e)
-            logger.error(f"❌ Error loading CSV file: {e}")
+            logger.error(f"[FAILED] Error loading CSV file: {e}")
             log_function_exit("load_data_from_csv", success=False, result_info="Failed to load data")
             return False
 
@@ -489,7 +489,7 @@ class AcademicLotteryAnalyzer:
             try:
                 return pd.to_datetime(date_str, dayfirst=False)
             except:
-                logger.warning(f"⚠️  Could not parse date: {date_str}")
+                logger.warning(f"[WARNING]  Could not parse date: {date_str}")
                 return None
 
     def _advanced_data_cleaning(self, df: pd.DataFrame, required_cols: List[str]) -> pd.DataFrame:
@@ -500,7 +500,7 @@ class AcademicLotteryAnalyzer:
         df = df.drop_duplicates(subset=['draw_id'], keep='first')
         duplicates_removed = initial_len - len(df)
         if duplicates_removed > 0:
-            logger.info(f"🔄 Removed {duplicates_removed} duplicate draws")
+            logger.info(f"[PROCESS] Removed {duplicates_removed} duplicate draws")
 
         # Remove rows with missing critical data
         df = df.dropna(subset=required_cols + ['date'])
@@ -511,13 +511,13 @@ class AcademicLotteryAnalyzer:
             invalid_mask = (df[col] < 1) | (df[col] > 37) | df[col].isna()
             invalid_count = invalid_mask.sum()
             if invalid_count > 0:
-                logger.warning(f"⚠️  Removing {invalid_count} rows with invalid {col} values")
+                logger.warning(f"[WARNING]  Removing {invalid_count} rows with invalid {col} values")
                 df = df[~invalid_mask]
 
         # Sort by date
         df = df.sort_values('date', ascending=False)
 
-        logger.info(f"🧹 Data cleaning complete. Final dataset: {len(df)} draws")
+        logger.info(f"[CLEAN] Data cleaning complete. Final dataset: {len(df)} draws")
         return df
 
     def _count_consecutive(self, numbers: List[int]) -> int:
@@ -543,56 +543,56 @@ class AcademicLotteryAnalyzer:
         log_function_entry("perform_comprehensive_analysis", total_draws=len(self.draws))
         
         try:
-            logger.info("🎓 Starting comprehensive academic analysis...")
+            logger.info("[ACADEMIC] Starting comprehensive academic analysis...")
 
             self.analysis_results = ComprehensiveAnalysisResults()
 
             # Step 1: Compound-Dirichlet-Multinomial Analysis
-            logger.info("📊 Step 1/8: CDM (Compound-Dirichlet-Multinomial) Analysis...")
+            logger.info("[DATA] Step 1/8: CDM (Compound-Dirichlet-Multinomial) Analysis...")
             self.analysis_results.cdm_parameters = self._perform_cdm_analysis()
 
             # Step 2: Advanced LSTM with Bidirectional Architecture
             if ML_AVAILABLE:
-                logger.info("🧠 Step 2/8: Advanced LSTM Neural Network Analysis...")
+                logger.info("[AI] Step 2/8: Advanced LSTM Neural Network Analysis...")
                 self.analysis_results.lstm_model = self._train_advanced_lstm()
             else:
-                logger.warning("⚠️  Skipping LSTM - ML libraries not available")
+                logger.warning("[WARNING]  Skipping LSTM - ML libraries not available")
 
             # Step 3: Shannon Entropy and Information Theory
-            logger.info("📡 Step 3/8: Shannon Entropy & Information Theory Analysis...")
+            logger.info("[SIGNAL] Step 3/8: Shannon Entropy & Information Theory Analysis...")
             self.analysis_results.entropy_analysis = self._perform_entropy_analysis()
 
             # Step 4: Kolmogorov Complexity Estimation
-            logger.info("🔬 Step 4/8: Kolmogorov Complexity Analysis...")
+            logger.info("[ANALYSIS] Step 4/8: Kolmogorov Complexity Analysis...")
             self.analysis_results.kolmogorov_results = self._estimate_kolmogorov_complexity()
 
             # Step 5: Chaos Theory Analysis
-            logger.info("🌪️ Step 5/8: Chaos Theory & Lyapunov Analysis...")
+            logger.info("[CHAOS] Step 5/8: Chaos Theory & Lyapunov Analysis...")
             self.analysis_results.chaos_analysis = self._perform_chaos_analysis()
 
             # Step 6: NIST Statistical Test Suite
-            logger.info("🔍 Step 6/8: NIST Statistical Test Suite...")
+            logger.info("[SEARCH] Step 6/8: NIST Statistical Test Suite...")
             self.analysis_results.nist_test_results = self._perform_nist_tests()
 
             # Step 7: Hypergeometric Distribution Analysis
-            logger.info("📈 Step 7/8: Hypergeometric Distribution Analysis...")
+            logger.info("[STATS] Step 7/8: Hypergeometric Distribution Analysis...")
             self.analysis_results.hypergeometric_analysis = self._perform_hypergeometric_analysis()
 
             # Step 8: Pattern Recognition and Temporal Dependencies
-            logger.info("🔍 Step 8/8: Pattern Recognition Analysis...")
+            logger.info("[SEARCH] Step 8/8: Pattern Recognition Analysis...")
             self.analysis_results.pattern_analysis = self._perform_pattern_analysis()
 
             # Calculate comprehensive validation scores
             self._calculate_validation_scores()
 
-            logger.info("✅ Comprehensive academic analysis completed!")
+            logger.info("[SUCCESS] Comprehensive academic analysis completed!")
             log_function_exit("perform_comprehensive_analysis", success=True, 
                             result_info="All 8 analysis steps completed successfully")
             return self.analysis_results
             
         except Exception as e:
             log_function_error("perform_comprehensive_analysis", e)
-            logger.error(f"❌ Comprehensive analysis failed: {e}")
+            logger.error(f"[FAILED] Comprehensive analysis failed: {e}")
             log_function_exit("perform_comprehensive_analysis", success=False, 
                             result_info=f"Analysis failed: {str(e)}")
             raise
@@ -605,7 +605,7 @@ class AcademicLotteryAnalyzer:
         log_function_entry("_perform_cdm_analysis", draws_count=len(self.draws))
         
         try:
-            logger.info("🔬 Implementing CDM Model from academic research...")
+            logger.info("[ANALYSIS] Implementing CDM Model from academic research...")
 
             # Extract historical number frequencies
             all_numbers = []
@@ -640,7 +640,7 @@ class AcademicLotteryAnalyzer:
 
                 # Check convergence
                 if iteration > 0 and abs(log_likelihood_history[-1] - log_likelihood_history[-2]) < convergence_threshold:
-                    logger.info(f"✅ CDM converged after {iteration+1} iterations")
+                    logger.info(f"[SUCCESS] CDM converged after {iteration+1} iterations")
                     break
 
                 alpha = alpha_new
@@ -735,7 +735,7 @@ class AcademicLotteryAnalyzer:
         if result.success:
             return result.x
         else:
-            logger.warning("⚠️  CDM probability adjustment failed, using base probabilities")
+            logger.warning("[WARNING]  CDM probability adjustment failed, using base probabilities")
             return base_probs
 
     def _calculate_cdm_confidence_intervals(self, alpha: np.ndarray) -> Dict:
@@ -813,7 +813,7 @@ class AcademicLotteryAnalyzer:
         if not ML_AVAILABLE:
             return None
 
-        logger.info("🧠 Training advanced LSTM neural network...")
+        logger.info("[AI] Training advanced LSTM neural network...")
 
         # Prepare time series data
         sequence_length = self.config["lstm"]["sequence_length"]
@@ -822,7 +822,7 @@ class AcademicLotteryAnalyzer:
         X, y = self._prepare_lstm_sequences(sequence_length)
 
         if len(X) < 100:  # Need sufficient data
-            logger.warning("⚠️  Insufficient data for LSTM training")
+            logger.warning("[WARNING]  Insufficient data for LSTM training")
             return None
 
         # Split data for time series validation
@@ -855,7 +855,7 @@ class AcademicLotteryAnalyzer:
         # Generate predictions
         predictions = model.predict(X_test)
 
-        logger.info(f"✅ LSTM trained. Train loss: {train_loss:.4f}, Test loss: {test_loss:.4f}")
+        logger.info(f"[SUCCESS] LSTM trained. Train loss: {train_loss:.4f}, Test loss: {test_loss:.4f}")
 
         return {
             "model": model,
@@ -941,7 +941,7 @@ class AcademicLotteryAnalyzer:
         Shannon Entropy Analysis and Information Theory
         Implementation based on information theory research
         """
-        logger.info("📡 Performing Shannon entropy analysis...")
+        logger.info("[SIGNAL] Performing Shannon entropy analysis...")
 
         results = {
             "temporal_entropy": [],
@@ -1131,7 +1131,7 @@ class AcademicLotteryAnalyzer:
         Kolmogorov Complexity Estimation using Compression Algorithms
         Implementation based on algorithmic information theory
         """
-        logger.info("🔬 Estimating Kolmogorov complexity...")
+        logger.info("[ANALYSIS] Estimating Kolmogorov complexity...")
 
         results = {
             "compression_results": {},
@@ -1222,7 +1222,7 @@ class AcademicLotteryAnalyzer:
             else:
                 raise ValueError(f"Unknown compression algorithm: {algorithm}")
         except Exception as e:
-            logger.warning(f"⚠️  Compression failed with {algorithm}: {e}")
+            logger.warning(f"[WARNING]  Compression failed with {algorithm}: {e}")
             return data  # Return original if compression fails
 
     def _calculate_complexity_estimates(self, compression_results: Dict) -> Dict:
@@ -1335,7 +1335,7 @@ class AcademicLotteryAnalyzer:
         Chaos Theory Analysis with Lyapunov Exponents
         Implementation based on nonlinear dynamics research
         """
-        logger.info("🌪️ Performing chaos theory analysis...")
+        logger.info("[CHAOS] Performing chaos theory analysis...")
 
         results = {
             "lyapunov_exponents": {},
@@ -1349,7 +1349,7 @@ class AcademicLotteryAnalyzer:
         time_series = self._create_chaos_time_series()
 
         if len(time_series) < 100:
-            logger.warning("⚠️  Insufficient data for chaos analysis")
+            logger.warning("[WARNING]  Insufficient data for chaos analysis")
             return {"error": "Insufficient data"}
 
         # Calculate Lyapunov exponents for different embedding dimensions
@@ -1494,7 +1494,7 @@ class AcademicLotteryAnalyzer:
 
     def _find_optimal_embedding(self, time_series: np.ndarray) -> Dict:
         """Find optimal embedding dimension and time delay"""
-        logger.info("🔍 Find optimal embedding dimension and time delay")
+        logger.info("[SEARCH] Find optimal embedding dimension and time delay")
         # Method: False Nearest Neighbors for dimension
         # and Average Mutual Information for delay
 
@@ -1808,13 +1808,13 @@ class AcademicLotteryAnalyzer:
         NIST Statistical Test Suite Implementation
         Based on NIST SP 800-22 for randomness testing
         """
-        logger.info("🔍 Performing NIST statistical tests...")
+        logger.info("[SEARCH] Performing NIST statistical tests...")
 
         # Convert draws to binary sequence for NIST tests
         binary_sequence = self._convert_draws_to_binary_for_nist()
 
         if len(binary_sequence) < self.config["nist"]["sequence_length"]:
-            logger.warning("⚠️  Insufficient data for NIST tests")
+            logger.warning("[WARNING]  Insufficient data for NIST tests")
             return {"error": "Insufficient data length"}
 
         # Truncate to required length
@@ -1840,7 +1840,7 @@ class AcademicLotteryAnalyzer:
                     results[test_name] = self._nist_approximate_entropy_test(binary_sequence, significance_level)
 
             except Exception as e:
-                logger.warning(f"⚠️  NIST test {test_name} failed: {e}")
+                logger.warning(f"[WARNING]  NIST test {test_name} failed: {e}")
                 results[test_name] = {"error": str(e)}
 
         # Calculate overall NIST score
@@ -2204,7 +2204,7 @@ class AcademicLotteryAnalyzer:
         Hypergeometric Distribution Analysis
         Implementation based on combinatorial probability theory
         """
-        logger.info("📈 Performing hypergeometric analysis...")
+        logger.info("[STATS] Performing hypergeometric analysis...")
 
         N = self.config["hypergeometric"]["population_size"]  # 37 numbers
         K = 6  # Numbers drawn
@@ -2397,7 +2397,7 @@ class AcademicLotteryAnalyzer:
 
     def _perform_pattern_analysis(self) -> Dict:
         """Advanced pattern recognition analysis"""
-        logger.info("🔍 Performing pattern recognition analysis...")
+        logger.info("[SEARCH] Performing pattern recognition analysis...")
 
         results = {
             "temporal_patterns": {},
@@ -2665,7 +2665,7 @@ class AcademicLotteryAnalyzer:
         if not self.analysis_results:
             return
 
-        logger.info("📊 Calculating validation scores...")
+        logger.info("[DATA] Calculating validation scores...")
 
         validation_scores = {}
 
@@ -2680,7 +2680,7 @@ class AcademicLotteryAnalyzer:
                     score = self._backtest_method(method_name, train_draws, test_draws)
                     validation_scores[method_name] = score
                 except Exception as e:
-                    logger.warning(f"⚠️  Validation failed for {method_name}: {e}")
+                    logger.warning(f"[WARNING]  Validation failed for {method_name}: {e}")
                     validation_scores[method_name] = {"error": str(e)}
 
         self.analysis_results.validation_scores = validation_scores
@@ -2833,10 +2833,10 @@ class AcademicLotteryAnalyzer:
         """
         Generate final predictions using ensemble of all academic methods
         """
-        logger.info("🎯 Generating academic predictions...")
+        logger.info("[TARGET] Generating academic predictions...")
 
         if not self.analysis_results:
-            logger.error("❌ No analysis results available. Run analysis first.")
+            logger.error("[FAILED] No analysis results available. Run analysis first.")
             return {"error": "No analysis results"}
 
         # Generate predictions from each method
@@ -2950,7 +2950,7 @@ class AcademicLotteryAnalyzer:
             return predictions[:self.config["output"]["target_sets_per_method"]]
 
         except Exception as e:
-            logger.warning(f"⚠️  LSTM prediction failed: {e}")
+            logger.warning(f"[WARNING]  LSTM prediction failed: {e}")
             return []
 
     def _prepare_lstm_input_for_prediction(self, recent_draws: List[DrawData]) -> np.ndarray:
@@ -3248,7 +3248,7 @@ class AcademicLotteryAnalyzer:
 
     def _combine_predictions_ensemble(self, method_predictions: Dict) -> List[List[int]]:
         """Combine predictions using ensemble weighting"""
-        logger.info("🎭 Combining predictions with ensemble weighting...")
+        logger.info("[ENSEMBLE] Combining predictions with ensemble weighting...")
 
         # Collect all predictions with weights
         weighted_predictions = []
@@ -3260,7 +3260,7 @@ class AcademicLotteryAnalyzer:
                 weighted_predictions.append((prediction, weight, method_name))
 
         if not weighted_predictions:
-            logger.warning("⚠️  No valid predictions to combine")
+            logger.warning("[WARNING]  No valid predictions to combine")
             return []
 
         # Score each prediction
@@ -3293,7 +3293,7 @@ class AcademicLotteryAnalyzer:
                 if len(final_predictions) >= self.config["output"]["final_recommendations"]:
                     break
 
-        logger.info(f"✅ Generated {len(final_predictions)} ensemble predictions")
+        logger.info(f"[SUCCESS] Generated {len(final_predictions)} ensemble predictions")
         return final_predictions
 
     def _score_prediction_comprehensive(self, prediction: List[int]) -> float:
@@ -3592,49 +3592,49 @@ class AcademicLotteryAnalyzer:
     def display_comprehensive_results(self):
         """Display comprehensive analysis results"""
         print("\n" + "="*80)
-        print("🎓 COMPREHENSIVE ACADEMIC LOTTERY ANALYSIS RESULTS")
+        print("[ACADEMIC] COMPREHENSIVE ACADEMIC LOTTERY ANALYSIS RESULTS")
         print("="*80)
 
         if not self.analysis_results:
-            print("❌ No analysis results available")
+            print("[FAILED] No analysis results available")
             return
 
         # Basic statistics
-        print(f"\n📊 Dataset Statistics:")
+        print(f"\n[DATA] Dataset Statistics:")
         print(f"   • Total draws analyzed: {len(self.draws):,}")
         print(f"   • Time span: {(self.draws[0].date - self.draws[-1].date).days:,} days")
         print(f"   • Date range: {self.draws[-1].date.strftime('%d/%m/%Y')} - {self.draws[0].date.strftime('%d/%m/%Y')}")
 
         # Academic methods results
-        print(f"\n🎓 Academic Methods Applied:")
+        print(f"\n[ACADEMIC] Academic Methods Applied:")
 
         if self.analysis_results.cdm_parameters:
             cdm = self.analysis_results.cdm_parameters
-            print(f"   ✅ CDM Model - Convergence: {cdm.get('convergence_iterations', 'N/A')} iterations")
+            print(f"   [SUCCESS] CDM Model - Convergence: {cdm.get('convergence_iterations', 'N/A')} iterations")
 
         if ML_AVAILABLE and self.analysis_results.lstm_model:
             lstm = self.analysis_results.lstm_model
-            print(f"   ✅ LSTM Neural Network - Test Loss: {lstm.get('test_loss', 'N/A'):.4f}")
+            print(f"   [SUCCESS] LSTM Neural Network - Test Loss: {lstm.get('test_loss', 'N/A'):.4f}")
 
         if self.analysis_results.entropy_analysis:
             entropy = self.analysis_results.entropy_analysis
             overall = entropy.get("overall_analysis", {})
-            print(f"   ✅ Shannon Entropy - Randomness: {overall.get('randomness_assessment', 'N/A')}")
+            print(f"   [SUCCESS] Shannon Entropy - Randomness: {overall.get('randomness_assessment', 'N/A')}")
 
         if self.analysis_results.chaos_analysis:
             chaos = self.analysis_results.chaos_analysis
             assessment = chaos.get("chaos_assessment", {})
-            print(f"   ✅ Chaos Theory - Level: {assessment.get('chaos_level', 'N/A')}")
+            print(f"   [SUCCESS] Chaos Theory - Level: {assessment.get('chaos_level', 'N/A')}")
 
         if self.analysis_results.nist_test_results:
             nist = self.analysis_results.nist_test_results
             overall_nist = nist.get("overall_assessment", {})
-            print(f"   ✅ NIST Tests - Pass Rate: {overall_nist.get('pass_rate', 0):.1%}")
+            print(f"   [SUCCESS] NIST Tests - Pass Rate: {overall_nist.get('pass_rate', 0):.1%}")
 
         if self.analysis_results.hypergeometric_analysis:
             hyper = self.analysis_results.hypergeometric_analysis
             goodness = hyper.get("goodness_of_fit", {})
-            print(f"   ✅ Hypergeometric - p-value: {goodness.get('p_value', 'N/A'):.4f}")
+            print(f"   [SUCCESS] Hypergeometric - p-value: {goodness.get('p_value', 'N/A'):.4f}")
 
         # Generate and display predictions
         predictions_results = self.generate_academic_predictions()
@@ -3644,7 +3644,7 @@ class AcademicLotteryAnalyzer:
             strong_predictions = predictions_results["strong_number_predictions"]
             confidence_scores = predictions_results["confidence_scores"]
 
-            print(f"\n🎯 FINAL ACADEMIC PREDICTIONS:")
+            print(f"\n[TARGET] FINAL ACADEMIC PREDICTIONS:")
             print("-" * 60)
 
             for i, prediction in enumerate(final_predictions, 1):
@@ -3657,11 +3657,11 @@ class AcademicLotteryAnalyzer:
                     odd_count = sum(1 for n in prediction if n % 2 == 1)
                     print(f"     Sum: {pred_sum}, Odd: {odd_count}, Range: {min(prediction)}-{max(prediction)}")
 
-            print(f"\n💥 Strong Number Predictions: {strong_predictions}")
+            print(f"\n[STRONG] Strong Number Predictions: {strong_predictions}")
 
             # Confidence summary
             conf_dist = confidence_scores.get("confidence_distribution", {})
-            print(f"\n📈 Confidence Distribution:")
+            print(f"\n[STATS] Confidence Distribution:")
             print(f"   • High confidence (>0.8): {conf_dist.get('high', 0)} predictions")
             print(f"   • Medium confidence (0.5-0.8): {conf_dist.get('medium', 0)} predictions")
             print(f"   • Low confidence (<0.5): {conf_dist.get('low', 0)} predictions")
@@ -3670,13 +3670,13 @@ class AcademicLotteryAnalyzer:
         # Analysis summary
         if "academic_analysis_summary" in predictions_results:
             summary = predictions_results["academic_analysis_summary"]
-            print(f"\n🔬 Academic Analysis Summary:")
+            print(f"\n[ANALYSIS] Academic Analysis Summary:")
             print(f"   • Methods applied: {len(summary['academic_methods_applied'])}")
-            print(f"   • Data quality: ✅ Validated")
-            print(f"   • Statistical rigor: ✅ Peer-reviewed methods")
-            print(f"   • Ensemble approach: ✅ Multi-method integration")
+            print(f"   • Data quality: [SUCCESS] Validated")
+            print(f"   • Statistical rigor: [SUCCESS] Peer-reviewed methods")
+            print(f"   • Ensemble approach: [SUCCESS] Multi-method integration")
 
-        print(f"\n⚠️  Academic Disclaimer:")
+        print(f"\n[WARNING]  Academic Disclaimer:")
         print(f"   This analysis uses state-of-the-art academic methods from peer-reviewed research.")
         print(f"   While mathematically rigorous, lottery outcomes remain fundamentally random.")
         print(f"   Use for educational and research purposes only.")
@@ -3690,7 +3690,7 @@ def main():
     log_function_entry("main")
     
     try:
-        print("🎓 Advanced Academic Lottery Analysis System")
+        print("[ACADEMIC] Advanced Academic Lottery Analysis System")
         print("=" * 50)
         print("Based on peer-reviewed research from:")
         print("• Applied Mathematics & Statistics Journals")
@@ -3710,7 +3710,7 @@ def main():
         if not analyzer.load_data_from_csv():
             error_msg = "Failed to load data. Please check your CSV file."
             logger.error(error_msg)
-            print(f"❌ {error_msg}")
+            print(f"[FAILED] {error_msg}")
             log_function_exit("main", success=False, result_info="Data loading failed")
             return 1
         logger.info("Data loaded successfully")
@@ -3719,7 +3719,7 @@ def main():
         logger.info("Starting comprehensive analysis")
         analyzer.perform_comprehensive_analysis()
         logger.info("Comprehensive analysis completed successfully")
-        print("✅ Academic analysis completed successfully!")
+        print("[SUCCESS] Academic analysis completed successfully!")
 
         # Display results
         logger.info("Displaying comprehensive results")
@@ -3732,7 +3732,7 @@ def main():
     except Exception as e:
         error_msg = f"Analysis failed: {e}"
         log_function_error("main", e)
-        logger.error(f"❌ {error_msg}")
+        logger.error(f"[FAILED] {error_msg}")
         log_function_exit("main", success=False, result_info=error_msg)
         return 1
 
