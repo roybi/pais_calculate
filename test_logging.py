@@ -51,16 +51,16 @@ logger = setup_detailed_logging()
 def log_function_entry(func_name: str, **kwargs):
     """Log function entry with parameters"""
     params_str = ', '.join([f"{k}={v}" for k, v in kwargs.items() if v is not None])
-    logger.info(f"🚀 ENTERING {func_name}({params_str})")
+    logger.info(f"[ENTER] {func_name}({params_str})")
 
 def log_function_exit(func_name: str, success: bool = True, result_info: str = ""):
     """Log function exit with result info"""
-    status = "✅ SUCCESS" if success else "❌ FAILED"
-    logger.info(f"🏁 EXITING {func_name} - {status} {result_info}")
+    status = "SUCCESS" if success else "FAILED"
+    logger.info(f"[EXIT] {func_name} - {status} {result_info}")
 
 def log_function_error(func_name: str, error: Exception):
     """Log function error with details"""
-    logger.error(f"💥 ERROR in {func_name}: {str(error)}", exc_info=True)
+    logger.error(f"[ERROR] {func_name}: {str(error)}", exc_info=True)
 
 def test_function():
     """Test function to demonstrate logging"""
@@ -100,7 +100,7 @@ def main():
     log_function_entry("main")
     
     try:
-        logger.info("🧪 Starting logging functionality test")
+        logger.info("Starting logging functionality test")
         
         # Test successful function
         logger.info("Testing successful function execution...")
@@ -110,7 +110,7 @@ def main():
         logger.info("Testing function with error handling...")
         success2 = test_function_with_error()
         
-        logger.info("🎉 Logging test completed successfully!")
+        logger.info("Logging test completed successfully!")
         log_function_exit("main", success=True, result_info="All logging tests passed")
         
         return 0
