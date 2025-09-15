@@ -1393,9 +1393,21 @@ class AcademicLotteryAnalyzer:
         # Phase space reconstruction and analysis
         print("Performing phase space analysis...")
         optimal_embedding = self._find_optimal_embedding(time_series)
-        results["phase_space_analysis"] = self._analyze_phase_space(
-            time_series, optimal_embedding["dimension"], optimal_embedding["delay"]
-        )
+        
+        # Safely perform phase space analysis with error handling
+        try:
+            phase_space_result = self._analyze_phase_space(
+                time_series, optimal_embedding["dimension"], optimal_embedding["delay"]
+            )
+            results["phase_space_analysis"] = phase_space_result
+            
+            # Check if phase space analysis failed
+            if "error" in phase_space_result:
+                logger.warning(f"Phase space analysis failed: {phase_space_result['error']}")
+                
+        except Exception as e:
+            logger.warning(f"Phase space analysis exception: {e}")
+            results["phase_space_analysis"] = {"error": f"Phase space analysis failed: {str(e)}"}
 
         # Calculate correlation dimension
         print("Calculating correlation dimension..."        )
@@ -1658,8 +1670,34 @@ class AcademicLotteryAnalyzer:
         # Calculate phase space statistics
         logger.info("Calculating phase space statistics...")
         centroid = np.mean(embedded, axis=0)
-        covariance = np.cov(embedded.T)
-        eigenvalues, eigenvectors = np.linalg.eig(covariance)
+        
+        # Validate embedded data dimensions
+        if embedded.shape[0] < 2 or embedded.shape[1] < 1:
+            logger.warning(f"Insufficient data for phase space analysis: shape {embedded.shape}")
+            return {"error": f"Insufficient data for phase space analysis: shape {embedded.shape}"}
+        
+        # Calculate covariance matrix with proper validation
+        try:
+            covariance = np.cov(embedded.T)
+            
+            # Ensure covariance matrix is at least 2D
+            if covariance.ndim == 0:
+                # Single variable case - create 1x1 matrix
+                covariance = np.array([[covariance]])
+            elif covariance.ndim == 1:
+                # This shouldn't happen but handle it
+                covariance = np.diag(covariance)
+            
+            # Validate covariance matrix dimensions
+            if covariance.shape[0] == 0 or covariance.shape[1] == 0:
+                logger.warning("Covariance matrix has zero dimensions")
+                return {"error": "Covariance matrix calculation failed"}
+                
+            eigenvalues, eigenvectors = np.linalg.eig(covariance)
+            
+        except (np.linalg.LinAlgError, ValueError) as e:
+            logger.warning(f"Phase space eigenvalue calculation failed: {e}")
+            return {"error": f"Eigenvalue calculation failed: {str(e)}"}
 
         # Calculate volume of phase space
         logger.info("Calculating phase space volume...")

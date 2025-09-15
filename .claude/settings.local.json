@@ -5,7 +5,8 @@
       "Bash(git init:*)",
       "Bash(git add:*)",
       "Bash(sed:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Read(//c/Users/LivingRoom/OneDrive/Desktop/**)"
     ],
     "deny": [],
     "ask": []
