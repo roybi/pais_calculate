@@ -905,19 +905,16 @@ class AcademicLotteryAnalyzer:
         # Generate predictions
         predictions = model.predict(X_test)
 
-        # Handle case where evaluate returns list or single value
-        try:
-            train_loss_val = float(train_loss[0]) if isinstance(train_loss, list) else float(train_loss)
-            test_loss_val = float(test_loss[0]) if isinstance(test_loss, list) else float(test_loss)
-            logger.info(f"[SUCCESS] LSTM trained. Train loss: {train_loss_val:.4f}, Test loss: {test_loss_val:.4f}")
-        except (TypeError, IndexError):
-            logger.info(f"[SUCCESS] LSTM trained. Train loss: {train_loss}, Test loss: {test_loss}")
-
-        # Save the trained model
+        # Extract loss values safely
+        train_loss_val = self._extract_loss_value(train_loss)
+        test_loss_val = self._extract_loss_value(test_loss)
+        
+        logger.info(f"[SUCCESS] LSTM trained. Train loss: {train_loss_val:.4f}, Test loss: {test_loss_val:.4f}")
+        
         self._save_lstm_model(model, {
             "history": history.history,
-            "train_loss": train_loss,
-            "test_loss": test_loss,
+            "train_loss": train_loss_val,
+            "test_loss": test_loss_val,
             "sequence_length": sequence_length,
             "data_size": len(self.draws)
         })
@@ -925,8 +922,8 @@ class AcademicLotteryAnalyzer:
         return {
             "model": model,
             "history": history.history,
-            "train_loss": train_loss,
-            "test_loss": test_loss,
+            "train_loss": train_loss_val,
+            "test_loss": test_loss_val,
             "predictions": predictions,
             "test_sequences": X_test,
             "test_targets": y_test
@@ -1075,6 +1072,15 @@ class AcademicLotteryAnalyzer:
         model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
 
         return model
+
+    def _extract_loss_value(self, loss_data) -> float:
+        """Safely extract a single loss value from Keras evaluation result"""
+        if isinstance(loss_data, list) and len(loss_data) > 0:
+            return float(loss_data[0])
+        elif isinstance(loss_data, (int, float)):
+            return float(loss_data)
+        else:
+            return 0.0
 
     def _save_analysis_cache(self, analysis_type: str, results: Dict) -> None:
         """Save analysis results to cache"""
@@ -3869,7 +3875,15 @@ class AcademicLotteryAnalyzer:
 
         if ML_AVAILABLE and self.analysis_results.lstm_model:
             lstm = self.analysis_results.lstm_model
-            print(f"   [SUCCESS] LSTM Neural Network - Test Loss: {lstm.get('test_loss', 'N/A'):.4f}")
+            test_loss = lstm.get('test_loss', 0)
+            
+            # Use helper method to safely extract loss value
+            test_loss_val = self._extract_loss_value(test_loss) if test_loss != 'N/A' else None
+                
+            if test_loss_val is not None and test_loss_val > 0:
+                print(f"   [SUCCESS] LSTM Neural Network - Test Loss: {test_loss_val:.4f}")
+            else:
+                print(f"   [SUCCESS] LSTM Neural Network - Test Loss: N/A")
 
         if self.analysis_results.entropy_analysis:
             entropy = self.analysis_results.entropy_analysis
