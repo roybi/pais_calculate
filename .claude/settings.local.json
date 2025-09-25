@@ -8,7 +8,9 @@
       "Bash(git commit:*)",
       "Read(//c/Users/LivingRoom/OneDrive/Desktop/**)",
       "Read(//d/_Dev/python/pais_results/**)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(gh repo create:*)",
+      "Bash(git remote add:*)"
     ],
     "deny": [],
     "ask": []
