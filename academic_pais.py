@@ -170,12 +170,10 @@ def log_function_error(func_name: str, error: Exception):
 # Academic Configuration
 ACADEMIC_CONFIG = {
     # Data Configuration
-    "csv_file": "pais_lotto_results_20250914.csv",
+    "csv_file": "pais_lotto_results_20250921.csv",
     "min_draws_for_analysis": 500,  # Increased for better statistical power
     "cache_models": True,
     "model_cache_dir": "academic_models_cache",
-    "cache_analysis_results": True,
-    "cache_max_age_hours": 24,  # Analysis cache expiration time
 
     # CDM Model Parameters (from academic research)
     "cdm": {
@@ -366,12 +364,6 @@ class AcademicLotteryAnalyzer:
             cache_dir = Path(config["model_cache_dir"])
             cache_dir.mkdir(exist_ok=True)
             self.cache_dir = cache_dir
-            
-            # Initialize model persistence paths
-            self.lstm_model_path = cache_dir / "lstm_model.h5"
-            self.analysis_cache_path = cache_dir / "analysis_results.pkl"
-            self.frequency_cache_path = cache_dir / "frequency_patterns.pkl"
-            self.chaos_cache_path = cache_dir / "chaos_analysis.pkl"
 
             logger.info("[ACADEMIC] Academic Lottery Analyzer initialized")
             log_function_exit("__init__", success=True, result_info="Analyzer initialized successfully")
@@ -639,12 +631,6 @@ class AcademicLotteryAnalyzer:
         """
         log_function_entry("_perform_cdm_analysis", draws_count=len(self.draws))
         
-        # Try to load from cache first
-        cached_results = self._load_analysis_cache('cdm')
-        if cached_results:
-            log_function_exit("_perform_cdm_analysis", success=True, result_info="Loaded from cache")
-            return cached_results
-        
         try:
             logger.info("[ANALYSIS] Implementing CDM Model from academic research...")
 
@@ -700,9 +686,6 @@ class AcademicLotteryAnalyzer:
                 "convergence_iterations": len(log_likelihood_history),
                 "model_quality": self._assess_cdm_quality(alpha, frequency_matrix)
             }
-            
-            # Cache the results
-            self._save_analysis_cache('cdm', result)
             
             log_function_exit("_perform_cdm_analysis", success=True, 
                             result_info=f"CDM model trained with {len(log_likelihood_history)} iterations")
@@ -857,13 +840,7 @@ class AcademicLotteryAnalyzer:
         if not ML_AVAILABLE:
             return None
 
-        # Try to load existing model first
-        cached_model = self._load_lstm_model()
-        if cached_model:
-            logger.info("[CACHE] Using previously trained LSTM model")
-            return cached_model
-
-        logger.info("[AI] Training new advanced LSTM neural network...")
+        logger.info("[AI] Training advanced LSTM neural network...")
 
         # Prepare time series data
         sequence_length = self.config["lstm"]["sequence_length"]
@@ -905,104 +882,23 @@ class AcademicLotteryAnalyzer:
         # Generate predictions
         predictions = model.predict(X_test)
 
-        # Extract loss values safely
-        train_loss_val = self._extract_loss_value(train_loss)
-        test_loss_val = self._extract_loss_value(test_loss)
-        
-        logger.info(f"[SUCCESS] LSTM trained. Train loss: {train_loss_val:.4f}, Test loss: {test_loss_val:.4f}")
-        
-        self._save_lstm_model(model, {
-            "history": history.history,
-            "train_loss": train_loss_val,
-            "test_loss": test_loss_val,
-            "sequence_length": sequence_length,
-            "data_size": len(self.draws)
-        })
+        # Handle case where evaluate returns list or single value
+        try:
+            train_loss_val = float(train_loss[0]) if isinstance(train_loss, list) else float(train_loss)
+            test_loss_val = float(test_loss[0]) if isinstance(test_loss, list) else float(test_loss)
+            logger.info(f"[SUCCESS] LSTM trained. Train loss: {train_loss_val:.4f}, Test loss: {test_loss_val:.4f}")
+        except (TypeError, IndexError):
+            logger.info(f"[SUCCESS] LSTM trained. Train loss: {train_loss}, Test loss: {test_loss}")
 
         return {
             "model": model,
             "history": history.history,
-            "train_loss": train_loss_val,
-            "test_loss": test_loss_val,
+            "train_loss": train_loss,
+            "test_loss": test_loss,
             "predictions": predictions,
             "test_sequences": X_test,
             "test_targets": y_test
         }
-
-    def _save_lstm_model(self, model: Any, metadata: Dict) -> None:
-        """Save trained LSTM model and metadata"""
-        if not ML_AVAILABLE or not self.config.get("cache_models", True):
-            return
-            
-        try:
-            # Save the Keras model
-            model.save(self.lstm_model_path)
-            
-            # Save metadata
-            metadata_path = self.cache_dir / "lstm_metadata.pkl"
-            with open(metadata_path, 'wb') as f:
-                pickle.dump(metadata, f)
-                
-            logger.info(f"[CACHE] LSTM model saved to {self.lstm_model_path}")
-        except Exception as e:
-            logger.warning(f"[WARNING] Failed to save LSTM model: {e}")
-
-    def _load_lstm_model(self) -> Optional[Dict]:
-        """Load previously trained LSTM model if available and current"""
-        if not ML_AVAILABLE or not self.config.get("cache_models", True) or not self.lstm_model_path.exists():
-            return None
-            
-        try:
-            metadata_path = self.cache_dir / "lstm_metadata.pkl"
-            if not metadata_path.exists():
-                return None
-                
-            # Load metadata to check if model is still valid
-            with open(metadata_path, 'rb') as f:
-                metadata = pickle.load(f)
-                
-            # Check if data size has significantly changed (invalidating model)
-            if abs(metadata.get("data_size", 0) - len(self.draws)) > 50:
-                logger.info("[CACHE] LSTM model outdated - data size changed significantly")
-                return None
-                
-            # Load the model
-            from tensorflow.keras.models import load_model
-            model = load_model(self.lstm_model_path)
-            
-            logger.info("[CACHE] Loaded previously trained LSTM model")
-            return {
-                "model": model,
-                "metadata": metadata
-            }
-            
-        except Exception as e:
-            logger.warning(f"[WARNING] Failed to load LSTM model: {e}")
-            return None
-
-    def clear_all_caches(self) -> None:
-        """Clear all cached models and analysis results"""
-        try:
-            cache_files = [
-                self.lstm_model_path,
-                self.cache_dir / "lstm_metadata.pkl",
-                self.analysis_cache_path,
-                self.frequency_cache_path,
-                self.chaos_cache_path,
-                self.cache_dir / "entropy_cache.pkl",
-                self.cache_dir / "cdm_cache.pkl"
-            ]
-            
-            cleared_count = 0
-            for cache_file in cache_files:
-                if cache_file.exists():
-                    cache_file.unlink()
-                    cleared_count += 1
-                    
-            logger.info(f"[CACHE] Cleared {cleared_count} cache files")
-            
-        except Exception as e:
-            logger.warning(f"[WARNING] Failed to clear some cache files: {e}")
 
     def _prepare_lstm_sequences(self, sequence_length: int) -> Tuple[np.ndarray, np.ndarray]:
         """Prepare sequences for LSTM training"""
@@ -1073,86 +969,11 @@ class AcademicLotteryAnalyzer:
 
         return model
 
-    def _extract_loss_value(self, loss_data) -> float:
-        """Safely extract a single loss value from Keras evaluation result"""
-        if isinstance(loss_data, list) and len(loss_data) > 0:
-            return float(loss_data[0])
-        elif isinstance(loss_data, (int, float)):
-            return float(loss_data)
-        else:
-            return 0.0
-
-    def _save_analysis_cache(self, analysis_type: str, results: Dict) -> None:
-        """Save analysis results to cache"""
-        if not self.config.get("cache_analysis_results", True):
-            return
-            
-        try:
-            cache_path = self.cache_dir / f"{analysis_type}_cache.pkl"
-            cache_data = {
-                'results': results,
-                'data_size': len(self.draws),
-                'timestamp': pd.Timestamp.now(),
-                'data_hash': hash(str([draw.numbers for draw in self.draws[-50:]]))  # Hash last 50 draws
-            }
-            
-            with open(cache_path, 'wb') as f:
-                pickle.dump(cache_data, f)
-                
-            logger.info(f"[CACHE] {analysis_type} analysis cached")
-        except Exception as e:
-            logger.warning(f"[WARNING] Failed to cache {analysis_type} analysis: {e}")
-
-    def _load_analysis_cache(self, analysis_type: str, max_age_hours: int = None) -> Optional[Dict]:
-        """Load cached analysis results if valid"""
-        if not self.config.get("cache_analysis_results", True):
-            return None
-            
-        if max_age_hours is None:
-            max_age_hours = self.config.get("cache_max_age_hours", 24)
-            
-        try:
-            cache_path = self.cache_dir / f"{analysis_type}_cache.pkl"
-            if not cache_path.exists():
-                return None
-                
-            with open(cache_path, 'rb') as f:
-                cache_data = pickle.load(f)
-                
-            # Check if cache is too old
-            age = pd.Timestamp.now() - cache_data['timestamp']
-            if age.total_seconds() > max_age_hours * 3600:
-                logger.info(f"[CACHE] {analysis_type} cache expired")
-                return None
-                
-            # Check if data has changed significantly
-            current_hash = hash(str([draw.numbers for draw in self.draws[-50:]]))
-            if cache_data.get('data_hash') != current_hash:
-                logger.info(f"[CACHE] {analysis_type} cache outdated - data changed")
-                return None
-                
-            # Check if data size changed significantly
-            if abs(cache_data.get('data_size', 0) - len(self.draws)) > 10:
-                logger.info(f"[CACHE] {analysis_type} cache outdated - data size changed")
-                return None
-                
-            logger.info(f"[CACHE] Loaded {analysis_type} analysis from cache")
-            return cache_data['results']
-            
-        except Exception as e:
-            logger.warning(f"[WARNING] Failed to load {analysis_type} cache: {e}")
-            return None
-
     def _perform_entropy_analysis(self) -> Dict:
         """
         Shannon Entropy Analysis and Information Theory
         Implementation based on information theory research
         """
-        # Try to load from cache first
-        cached_results = self._load_analysis_cache('entropy')
-        if cached_results:
-            return cached_results
-            
         logger.info("[SIGNAL] Performing Shannon entropy analysis...")
 
         results = {
@@ -1209,9 +1030,6 @@ class AcademicLotteryAnalyzer:
             "entropy_ratio": overall_entropy / max_possible_entropy,
             "randomness_assessment": self._assess_randomness_level(overall_entropy, max_possible_entropy)
         }
-
-        # Cache the results
-        self._save_analysis_cache('entropy', results)
 
         return results
 
@@ -1550,11 +1368,6 @@ class AcademicLotteryAnalyzer:
         Chaos Theory Analysis with Lyapunov Exponents
         Implementation based on nonlinear dynamics research
         """
-        # Try to load from cache first
-        cached_results = self._load_analysis_cache('chaos')
-        if cached_results:
-            return cached_results
-            
         logger.info("[CHAOS] Performing chaos theory analysis...")
 
         results = {
@@ -1617,9 +1430,6 @@ class AcademicLotteryAnalyzer:
         # Overall chaos assessment
         print("Assessing chaotic behavior...")
         results["chaos_assessment"] = self._assess_chaotic_behavior(results)
-
-        # Cache the results
-        self._save_analysis_cache('chaos', results)
 
         return results
 
@@ -3108,7 +2918,7 @@ class AcademicLotteryAnalyzer:
             method_predictions["cdm_model"] = self._generate_cdm_predictions()
 
         # LSTM predictions
-        if ML_AVAILABLE and self.analysis_results.lstm_model:
+        if ML_AVAILABLE and self.analysis_results.lstm_model and isinstance(self.analysis_results.lstm_model, dict):
             method_predictions["lstm_model"] = self._generate_lstm_predictions()
 
         # Entropy-based predictions
@@ -3173,7 +2983,7 @@ class AcademicLotteryAnalyzer:
             return []
 
         lstm_results = self.analysis_results.lstm_model
-        if not lstm_results or "model" not in lstm_results:
+        if not lstm_results or not isinstance(lstm_results, dict) or "model" not in lstm_results:
             return []
 
         model = lstm_results["model"]
@@ -3735,7 +3545,7 @@ class AcademicLotteryAnalyzer:
                 # This is simplified - in practice you'd check each method's output
                 if self.analysis_results.cdm_parameters:
                     supporting_methods += 0.2
-                if ML_AVAILABLE and self.analysis_results.lstm_model:
+                if ML_AVAILABLE and self.analysis_results.lstm_model and isinstance(self.analysis_results.lstm_model, dict):
                     supporting_methods += 0.2
                 if self.analysis_results.entropy_analysis:
                     supporting_methods += 0.15
@@ -3794,7 +3604,7 @@ class AcademicLotteryAnalyzer:
         if hasattr(self.analysis_results, 'cdm_parameters') and self.analysis_results.cdm_parameters:
             summary["academic_methods_applied"].append("Compound-Dirichlet-Multinomial Model")
 
-        if ML_AVAILABLE and hasattr(self.analysis_results, 'lstm_model') and self.analysis_results.lstm_model:
+        if ML_AVAILABLE and hasattr(self.analysis_results, 'lstm_model') and self.analysis_results.lstm_model and isinstance(self.analysis_results.lstm_model, dict):
             summary["academic_methods_applied"].append("LSTM Neural Network")
 
         if hasattr(self.analysis_results, 'entropy_analysis') and self.analysis_results.entropy_analysis:
@@ -3873,17 +3683,13 @@ class AcademicLotteryAnalyzer:
             cdm = self.analysis_results.cdm_parameters
             print(f"   [SUCCESS] CDM Model - Convergence: {cdm.get('convergence_iterations', 'N/A')} iterations")
 
-        if ML_AVAILABLE and self.analysis_results.lstm_model:
+        if ML_AVAILABLE and self.analysis_results.lstm_model and isinstance(self.analysis_results.lstm_model, dict):
             lstm = self.analysis_results.lstm_model
-            test_loss = lstm.get('test_loss', 0)
-            
-            # Use helper method to safely extract loss value
-            test_loss_val = self._extract_loss_value(test_loss) if test_loss != 'N/A' else None
-                
-            if test_loss_val is not None and test_loss_val > 0:
-                print(f"   [SUCCESS] LSTM Neural Network - Test Loss: {test_loss_val:.4f}")
+            test_loss = lstm.get('test_loss', 'N/A')
+            if isinstance(test_loss, (int, float)):
+                print(f"   [SUCCESS] LSTM Neural Network - Test Loss: {test_loss:.4f}")
             else:
-                print(f"   [SUCCESS] LSTM Neural Network - Test Loss: N/A")
+                print(f"   [SUCCESS] LSTM Neural Network - Test Loss: {test_loss}")
 
         if self.analysis_results.entropy_analysis:
             entropy = self.analysis_results.entropy_analysis
@@ -3903,11 +3709,7 @@ class AcademicLotteryAnalyzer:
         if self.analysis_results.hypergeometric_analysis:
             hyper = self.analysis_results.hypergeometric_analysis
             goodness = hyper.get("goodness_of_fit", {})
-            p_value = goodness.get('p_value', 'N/A')
-            if isinstance(p_value, (int, float)) and p_value != 'N/A':
-                print(f"   [SUCCESS] Hypergeometric - p-value: {p_value:.4f}")
-            else:
-                print(f"   [SUCCESS] Hypergeometric - p-value: N/A")
+            print(f"   [SUCCESS] Hypergeometric - p-value: {goodness.get('p_value', 'N/A'):.4f}")
 
         # Generate and display predictions
         predictions_results = self.generate_academic_predictions()
