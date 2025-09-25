@@ -883,9 +883,12 @@ class AcademicLotteryAnalyzer:
         predictions = model.predict(X_test)
 
         # Handle case where evaluate returns list or single value
-        train_loss_val = train_loss[0] if isinstance(train_loss, list) else train_loss
-        test_loss_val = test_loss[0] if isinstance(test_loss, list) else test_loss
-        logger.info(f"[SUCCESS] LSTM trained. Train loss: {train_loss_val:.4f}, Test loss: {test_loss_val:.4f}")
+        try:
+            train_loss_val = float(train_loss[0]) if isinstance(train_loss, list) else float(train_loss)
+            test_loss_val = float(test_loss[0]) if isinstance(test_loss, list) else float(test_loss)
+            logger.info(f"[SUCCESS] LSTM trained. Train loss: {train_loss_val:.4f}, Test loss: {test_loss_val:.4f}")
+        except (TypeError, IndexError):
+            logger.info(f"[SUCCESS] LSTM trained. Train loss: {train_loss}, Test loss: {test_loss}")
 
         return {
             "model": model,
