@@ -6,7 +6,9 @@
       "Bash(git add:*)",
       "Bash(sed:*)",
       "Bash(git commit:*)",
-      "Read(//c/Users/LivingRoom/OneDrive/Desktop/**)"
+      "Read(//c/Users/LivingRoom/OneDrive/Desktop/**)",
+      "Read(//d/_Dev/python/pais_results/**)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
