@@ -3903,7 +3903,11 @@ class AcademicLotteryAnalyzer:
         if self.analysis_results.hypergeometric_analysis:
             hyper = self.analysis_results.hypergeometric_analysis
             goodness = hyper.get("goodness_of_fit", {})
-            print(f"   [SUCCESS] Hypergeometric - p-value: {goodness.get('p_value', 'N/A'):.4f}")
+            p_value = goodness.get('p_value', 'N/A')
+            if isinstance(p_value, (int, float)) and p_value != 'N/A':
+                print(f"   [SUCCESS] Hypergeometric - p-value: {p_value:.4f}")
+            else:
+                print(f"   [SUCCESS] Hypergeometric - p-value: N/A")
 
         # Generate and display predictions
         predictions_results = self.generate_academic_predictions()
